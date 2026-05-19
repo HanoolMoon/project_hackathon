@@ -12,8 +12,6 @@ CV_CONFIDENCE_THRESHOLD = 0.70
 PET_CONFIG_PATH = str(BASE_DIR / "config" / "pet_config.json")
 OPENAI_MODEL = "gpt-4o-mini"
 MAX_TOKENS = 512
-CLASSES = ["normal", "diarrhea", "lack-of-water", "soft-poop"]
-
 SYSTEM_PROMPT_PATH = str(BASE_DIR / "prompts" / "system_prompt.txt")
 USER_TEMPLATE_PATH = str(BASE_DIR / "prompts" / "user_template.txt")
 

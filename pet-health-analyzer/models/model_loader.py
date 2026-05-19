@@ -10,7 +10,6 @@ from typing import Any
 from ultralytics import YOLO
 
 from config.settings import (
-    CLASSES,
     CV_CONFIDENCE_THRESHOLD,
     MODEL_PATH,
 )
@@ -58,7 +57,8 @@ def predict(image_path: str) -> dict[str, Any]:
     if confidence < CV_CONFIDENCE_THRESHOLD:
         return {"class": "unknown", "confidence": confidence}
 
+    raw_name = model.names[predicted_index].strip().lower()
     return {
-        "class": CLASSES[predicted_index],
+        "class": raw_name,
         "confidence": confidence,
     }
