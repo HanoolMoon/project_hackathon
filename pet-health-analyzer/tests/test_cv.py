@@ -1,16 +1,14 @@
 """
 CV 분석 모듈 테스트.
 model_loader와 cv_analyzer를 단독으로 테스트한다.
-실제 pkl 파일 없이 모의 모델로 핵심 로직만 검증한다.
+실제 pt 파일 없이 모의 모델로 핵심 로직만 검증한다.
 """
 
 import sys
-import types
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-# 프로젝트 루트를 경로에 추가
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 

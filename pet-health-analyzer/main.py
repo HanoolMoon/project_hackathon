@@ -1,6 +1,6 @@
 """
 Pet Health Analyzer CLI 진입점.
-usage: python main.py --image <이미지 경로> [--pet <프로필 인덱스>]
+usage: python main.py --image <이미지 경로>
 """
 
 import argparse
@@ -12,9 +12,9 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent / "config" / ".env")
 
 from core.cv_analyzer import analyze
-from core.health_report import build_report, print_report, save_log
+from core.health_report import build_report, print_report
 from core.llm_advisor import get_advice
-from core.pet_profile import load_profile
+from core.pet_profile import setup_profile
 
 
 def parse_args() -> argparse.Namespace:
@@ -26,33 +26,19 @@ def parse_args() -> argparse.Namespace:
         required=True,
         help="분석할 이미지 파일 경로 (예: ./data/input_images/photo.jpg)",
     )
-    parser.add_argument(
-        "--pet",
-        type=int,
-        default=0,
-        help="사용할 반려동물 프로필 인덱스 (기본값: 0)",
-    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     image_path = args.image
-    pet_index = args.pet
 
     if not Path(image_path).exists():
         print(f"\n[오류] 이미지 파일을 찾을 수 없습니다: {image_path}")
         print("  --image 옵션에 올바른 파일 경로를 입력해주세요.")
         sys.exit(1)
 
-    print("\n  반려동물 프로필을 불러오는 중...")
-    try:
-        pet_profile = load_profile(index=pet_index)
-    except Exception as e:
-        print(f"[오류] 프로필 로드 실패: {e}")
-        sys.exit(1)
-
-    print(f"  프로필 로드 완료: {pet_profile.get('name', '이름 없음')}")
+    pet_profile = setup_profile()
 
     print("\n  이미지를 분석하는 중...")
     try:
@@ -85,7 +71,6 @@ def main() -> None:
 
     report = build_report(pet_profile, cv_result, advice)
     print_report(report)
-    save_log(report)
 
 
 if __name__ == "__main__":

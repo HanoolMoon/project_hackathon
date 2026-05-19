@@ -3,9 +3,7 @@ LLM 조언 모듈 테스트.
 GPT API 호출을 모의(mock)하여 llm_advisor와 health_report를 단독으로 테스트한다.
 """
 
-import json
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -75,7 +73,6 @@ class TestHealthReport(unittest.TestCase):
 
     def _make_report(self) -> dict:
         return {
-            "timestamp": "2026-05-19T10:30:00",
             "pet_profile": {"name": "초코", "species": "개", "age": 3.0, "weight": 5.5,
                             "neutered": True, "food_type": "건식"},
             "cv_result": {"class": "normal", "confidence": 0.92,
@@ -93,23 +90,10 @@ class TestHealthReport(unittest.TestCase):
             advice="테스트 조언",
         )
 
-        self.assertIn("timestamp", report)
         self.assertIn("pet_profile", report)
         self.assertIn("cv_result", report)
         self.assertIn("advice", report)
-
-    def test_save_log_creates_file(self) -> None:
-        """save_log가 JSON 파일을 생성해야 한다."""
-        from core.health_report import save_log
-
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            with patch("core.health_report.LOG_DIR", tmp_dir):
-                log_path = save_log(self._make_report())
-
-        self.assertTrue(Path(log_path).exists())
-        with open(log_path, encoding="utf-8") as f:
-            data = json.load(f)
-        self.assertEqual(data["pet_profile"]["name"], "초코")
+        self.assertNotIn("timestamp", report)
 
     def test_print_report_no_error(self) -> None:
         """print_report가 예외 없이 실행되어야 한다."""

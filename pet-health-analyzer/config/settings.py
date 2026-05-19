@@ -5,13 +5,10 @@
 
 from pathlib import Path
 
-# 프로젝트 루트 기준 경로 설정
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-MODEL_PATH = str(BASE_DIR / "models" / "poop_classifier.pkl")
+MODEL_PATH = str(BASE_DIR / "models" / "poop_classifier.pt")
 CV_CONFIDENCE_THRESHOLD = 0.70
-PET_PROFILE_PATH = str(BASE_DIR / "data" / "pet_profiles.json")
-LOG_DIR = str(BASE_DIR / "data" / "analysis_logs")
 OPENAI_MODEL = "gpt-4o-mini"
 MAX_TOKENS = 512
 CLASSES = ["normal", "diarrhea", "lack-of-water", "soft-poop"]
@@ -19,7 +16,6 @@ CLASSES = ["normal", "diarrhea", "lack-of-water", "soft-poop"]
 SYSTEM_PROMPT_PATH = str(BASE_DIR / "prompts" / "system_prompt.txt")
 USER_TEMPLATE_PATH = str(BASE_DIR / "prompts" / "user_template.txt")
 
-# Bristol 등급 매핑
 BRISTOL_MAP: dict[str, str] = {
     "normal": "3~4",
     "soft-poop": "5~6",
