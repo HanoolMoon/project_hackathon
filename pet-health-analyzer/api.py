@@ -58,7 +58,10 @@ async def analyze_image(
     profile: str = Form(default=""),
 ):
     """이미지와 프로필을 받아 CV 분석 결과 및 GPT 조언을 반환한다."""
-    suffix = Path(file.filename or "image.jpg").suffix or ".jpg"
+    SUPPORTED = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp"}
+    suffix = Path(file.filename or "image.jpg").suffix.lower()
+    if suffix not in SUPPORTED:
+        suffix = ".jpg"
 
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
         content = await file.read()
