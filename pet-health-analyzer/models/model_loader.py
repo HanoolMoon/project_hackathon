@@ -18,13 +18,9 @@ from config.settings import (
     MODEL_PATH,
 )
 
-_IMAGE_MEAN = [0.485, 0.456, 0.406]
-_IMAGE_STD = [0.229, 0.224, 0.225]
-
 _preprocess = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=_IMAGE_MEAN, std=_IMAGE_STD),
 ])
 
 _model_cache: nn.Module | None = None
