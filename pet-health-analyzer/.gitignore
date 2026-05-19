@@ -4,3 +4,5 @@ models/poop_classifier.pt
 __pycache__/
 *.pyc
 .pytest_cache/
+*.pt
+*.env
