@@ -1,16 +1,13 @@
 """
 PyTorch 모델 로더 모듈.
-poop_classifier.pt 파일을 torch.load로 불러와 eval 모드로 전환하고,
-이미지를 전처리한 뒤 클래스 및 신뢰도를 반환하는 predict 함수를 제공한다.
+poop_classifier.pt 파일을 YOLO로 불러와 이미지를 분류하고
+클래스 및 신뢰도를 반환하는 predict 함수를 제공한다.
 """
 
 from pathlib import Path
 from typing import Any
 
-import torch
-import torch.nn as nn
-from PIL import Image
-from torchvision import transforms
+from ultralytics import YOLO
 
 from config.settings import (
     CLASSES,
@@ -18,16 +15,11 @@ from config.settings import (
     MODEL_PATH,
 )
 
-_preprocess = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-])
-
-_model_cache: nn.Module | None = None
+_model_cache: YOLO | None = None
 
 
-def load_model() -> nn.Module:
-    """pt 파일에서 모델을 로드하고 eval 모드로 전환한다."""
+def load_model() -> YOLO:
+    """pt 파일에서 YOLO 모델을 로드한다."""
     global _model_cache
     if _model_cache is not None:
         return _model_cache
@@ -36,20 +28,11 @@ def load_model() -> nn.Module:
     if not model_path.exists():
         raise FileNotFoundError(
             f"[오류] 모델 파일을 찾을 수 없습니다: {MODEL_PATH}\n"
-            "Colab에서 학습한 poop_classifier.pt 파일을 models/ 폴더에 넣어주세요."
+            "poop_classifier.pt 파일을 models/ 폴더에 넣어주세요."
         )
 
-    try:
-        model = torch.load(model_path, map_location="cpu")
-        model.eval()
-    except Exception as e:
-        raise RuntimeError(
-            f"[오류] 모델 로드에 실패했습니다: {e}\n"
-            "pt 파일이 올바른 PyTorch 모델인지 확인해주세요."
-        ) from e
-
-    _model_cache = model
-    return model
+    _model_cache = YOLO(str(model_path))
+    return _model_cache
 
 
 def predict(image_path: str) -> dict[str, Any]:
@@ -65,22 +48,12 @@ def predict(image_path: str) -> dict[str, Any]:
             f"[오류] 이미지 파일을 찾을 수 없습니다: {image_path}"
         )
 
-    try:
-        image = Image.open(path).convert("RGB")
-    except Exception as e:
-        raise ValueError(
-            f"[오류] 이미지 파일을 열 수 없습니다: {e}"
-        ) from e
-
     model = load_model()
-    tensor = _preprocess(image).unsqueeze(0)
+    results = model(str(path))
+    probs = results[0].probs
 
-    with torch.no_grad():
-        output = model(tensor)
-        probabilities = torch.softmax(output, dim=1)[0]
-
-    confidence = float(probabilities.max().item())
-    predicted_index = int(probabilities.argmax().item())
+    confidence = float(probs.top1conf.item())
+    predicted_index = int(probs.top1)
 
     if confidence < CV_CONFIDENCE_THRESHOLD:
         return {"class": "unknown", "confidence": confidence}

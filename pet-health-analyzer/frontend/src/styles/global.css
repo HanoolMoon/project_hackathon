@@ -1,0 +1,458 @@
+/* ── 컬러 변수 ── */
+:root {
+  --bg: #FDFBF7;
+  --card: #FFFFFF;
+  --point: #C8A97E;
+  --point-light: #F0E6D8;
+  --text-primary: #2D2D2D;
+  --text-secondary: #9E9E9E;
+  --border: #EEEBE4;
+  --shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+  --radius-card: 16px;
+  --radius-btn: 12px;
+  --radius-input: 10px;
+  --transition: 0.2s ease;
+}
+
+/* ── 리셋 ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #E8E4DC;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* ── 앱 래퍼: 390px 모바일 고정 ── */
+.app-wrapper {
+  width: 390px;
+  min-height: 100vh;
+  background: var(--bg);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ── 화면 공통 ── */
+.screen {
+  padding: 28px 20px 48px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  animation: fadeUp 0.2s ease;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── 온보딩 헤더 ── */
+.onboarding-header {
+  text-align: center;
+  padding: 32px 0 28px;
+}
+
+.logo {
+  font-size: 52px;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* ── 폼 카드 ── */
+.form-card {
+  background: var(--card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+/* ── 입력 그룹 ── */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+
+/* ── 텍스트 / 숫자 입력 ── */
+.input-field {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-input);
+  font-size: 15px;
+  color: var(--text-primary);
+  background: var(--bg);
+  outline: none;
+  transition: border-color var(--transition);
+  -moz-appearance: textfield;
+}
+
+.input-field::-webkit-outer-spin-button,
+.input-field::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.input-field:focus {
+  border-color: var(--point);
+  background: #FFFFFF;
+}
+
+.input-field::placeholder {
+  color: #C8C4BC;
+}
+
+/* ── 탭 선택 ── */
+.tab-group {
+  display: flex;
+  gap: 8px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px 8px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-input);
+  background: var(--bg);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.tab-btn.active {
+  border-color: var(--point);
+  background: var(--point-light);
+  color: var(--point);
+  font-weight: 600;
+}
+
+/* ── 토글 스위치 ── */
+.toggle-group {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toggle {
+  width: 52px;
+  height: 28px;
+  border-radius: 14px;
+  background: var(--border);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background var(--transition);
+}
+
+.toggle.on {
+  background: var(--point);
+}
+
+.toggle-knob {
+  display: block;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  transition: transform var(--transition);
+}
+
+.toggle.on .toggle-knob {
+  transform: translateX(24px);
+}
+
+/* ── 주 버튼 ── */
+.btn-primary {
+  width: 100%;
+  padding: 16px;
+  background: var(--point);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-btn);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--transition);
+  margin-top: auto;
+}
+
+.btn-primary:active {
+  opacity: 0.85;
+}
+
+/* ── 초기화 버튼 ── */
+.btn-reset {
+  width: 100%;
+  padding: 14px;
+  background: none;
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-btn);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all var(--transition);
+}
+
+.btn-reset:active {
+  color: #D9534F;
+  border-color: #D9534F;
+}
+
+/* ── 뒤로가기 버튼 ── */
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 24px;
+  transition: color var(--transition);
+}
+
+.btn-back:active {
+  color: var(--text-primary);
+}
+
+/* ── 아이콘 버튼 (설정) ── */
+.icon-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  transition: background var(--transition);
+  line-height: 1;
+}
+
+.icon-btn:active {
+  background: var(--border);
+}
+
+/* ── 리포트 헤더 ── */
+.report-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.report-greeting {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.report-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.name-highlight {
+  color: var(--point);
+}
+
+/* ── 카드 ── */
+.card {
+  background: var(--card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 14px;
+}
+
+.card-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+/* ── 분류 배지 ── */
+.class-badge {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 16px;
+}
+
+/* ── 결과 행 ── */
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+
+.result-key {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.result-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ── 신뢰도 게이지 ── */
+.confidence-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.confidence-fill {
+  height: 100%;
+  background: var(--point);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* ── AI 조언 텍스트 ── */
+.advice-text {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+}
+
+/* ── 드래그드랍 영역 ── */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-card);
+  padding: 48px 20px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--card);
+  transition: all var(--transition);
+  user-select: none;
+}
+
+.drop-zone:hover {
+  border-color: var(--point);
+  background: var(--point-light);
+}
+
+.drop-zone.dragging {
+  border-color: var(--point);
+  background: var(--point-light);
+  transform: scale(1.01);
+}
+
+.drop-zone-icon {
+  font-size: 52px;
+  margin-bottom: 14px;
+  transition: transform var(--transition);
+}
+
+.drop-zone.dragging .drop-zone-icon {
+  transform: scale(1.15);
+}
+
+.drop-zone-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.drop-zone-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.upload-hint {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 14px;
+  line-height: 1.6;
+}
+
+/* ── 이미지 미리보기 ── */
+.preview-img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: var(--radius-card);
+  margin-bottom: 14px;
+}
+
+/* ── 로딩 상태 ── */
+.loading-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 20px 0;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--point);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
