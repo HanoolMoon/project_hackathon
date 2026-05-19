@@ -1,0 +1,8 @@
+config/.env
+data/pet_profiles.json
+data/analysis_logs/
+data/input_images/
+models/poop_classifier.pkl
+__pycache__/
+*.pyc
+.pytest_cache/
