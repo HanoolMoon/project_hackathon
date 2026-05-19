@@ -65,7 +65,6 @@ export default function EditProfileScreen({ onBack, onReset }) {
       </button>
 
       <div className="onboarding-header" style={{ paddingTop: 0 }}>
-        <div className="logo">✏️</div>
         <h1 className="title">정보 수정</h1>
         <p className="subtitle">반려동물 정보를 변경할 수 있어요</p>
       </div>

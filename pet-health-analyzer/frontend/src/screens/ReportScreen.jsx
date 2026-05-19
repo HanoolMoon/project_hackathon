@@ -102,7 +102,7 @@ export default function ReportScreen({ onEdit }) {
     <div className="screen">
       <div className="report-header">
         <div>
-          <p className="report-greeting">안녕하세요 👋</p>
+          <p className="report-greeting">안녕하세요 </p>
           <h1 className="report-title">
             <span className="name-highlight">{profile.name || '반려동물'}</span>의{'\n'}건강 리포트
           </h1>
