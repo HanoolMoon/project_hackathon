@@ -5,6 +5,7 @@ FastAPI 서버.
 
 import json
 import tempfile
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -17,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config.settings import BASE_DIR, PET_CONFIG_PATH
 from core.cv_analyzer import analyze
-from core.llm_advisor import get_advice
+from core.llm_advisor import get_advice, get_weekly_summary
 
 RECORDS_PATH = BASE_DIR / "records.json"
 
@@ -29,6 +30,93 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+_STATUS_PRIORITY: dict[str, int] = {
+    "diarrhea": 1,
+    "lack-of-water": 1,
+    "caution": 2,
+    "soft-poop": 2,
+    "normal": 3,
+}
+
+
+def _mode(values: list[str]) -> str:
+    counts: dict[str, int] = {}
+    for v in values:
+        if v:
+            counts[v] = counts.get(v, 0) + 1
+    return max(counts, key=counts.__getitem__) if counts else ""
+
+
+def _aggregate_by_day(records: list) -> list:
+    """records를 UTC 날짜 기준으로 집계해 날짜 1개당 1개 레코드로 반환한다."""
+    groups: dict[str, list] = defaultdict(list)
+    for r in records:
+        date_key = r.get("saved_at", "")[:10]
+        if date_key:
+            groups[date_key].append(r)
+
+    result = []
+    for date_key in sorted(groups.keys()):
+        day = groups[date_key]
+
+        # cv_class: 하루 중 가장 나쁜 상태 (priority 낮을수록 나쁨)
+        worst = min(
+            day,
+            key=lambda r: _STATUS_PRIORITY.get(
+                r.get("result", {}).get("cv_class", "normal"), 3
+            ),
+        )
+        cv_class = worst.get("result", {}).get("cv_class", "normal")
+        advice   = worst.get("result", {}).get("advice", "")
+
+        # walkMinutes: 합산
+        total_walk = sum(
+            int(r.get("categories", {}).get("activity", {}).get("walkMinutes") or 0)
+            for r in day
+        )
+
+        # energy / appetite / vomiting: 최빈값
+        def _field(r: dict, *keys: str) -> str:
+            val = r.get("categories", {})
+            for k in keys:
+                val = val.get(k, {}) if isinstance(val, dict) else {}
+            return val if isinstance(val, str) else ""
+
+        energy   = _mode([_field(r, "condition", "energy")   for r in day])
+        appetite = _mode([_field(r, "condition", "appetite")  for r in day])
+        vomiting = _mode([_field(r, "condition", "vomiting")  for r in day])
+
+        # 나머지 필드: 하루 마지막 레코드 기준
+        last_cats = day[-1].get("categories", {})
+
+        result.append({
+            "saved_at": day[0]["saved_at"],
+            "categories": {
+                "meal":        last_cats.get("meal", {}),
+                "activity":    {**last_cats.get("activity", {}), "walkMinutes": str(total_walk)},
+                "condition":   {**last_cats.get("condition", {}), "energy": energy, "appetite": appetite, "vomiting": vomiting},
+                "environment": last_cats.get("environment", {}),
+            },
+            "result": {"cv_class": cv_class, "advice": advice},
+        })
+
+    return result
+
+
+def _append_record(record: dict) -> None:
+    """records.json에 레코드 하나를 추가한다."""
+    records: list = []
+    if RECORDS_PATH.exists():
+        try:
+            records = json.loads(RECORDS_PATH.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            pass
+    records.append(record)
+    RECORDS_PATH.write_text(
+        json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
 
 def _resolve_profile(profile_json: str) -> dict:
@@ -86,13 +174,24 @@ async def analyze_image(
 
         advice = get_advice(cv_result, pet_profile, categories_data)
 
-        return {
+        response_data = {
             "cv_class": cv_result["class"],
             "bristol_grade": cv_result.get("bristol_grade", ""),
             "confidence": cv_result["confidence"],
             "description": cv_result.get("description", ""),
             "advice": advice,
         }
+
+        _append_record({
+            "saved_at": datetime.now(timezone.utc).isoformat(),
+            "categories": categories_data,
+            "result": {
+                "cv_class": cv_result["class"],
+                "advice": advice,
+            },
+        })
+
+        return response_data
     finally:
         Path(tmp_path).unlink(missing_ok=True)
 
@@ -101,26 +200,32 @@ async def analyze_image(
 async def save_record(request: Request):
     """카테고리 데이터와 분석 결과를 records.json에 기록한다."""
     data = await request.json()
+    _append_record({**data, "saved_at": datetime.now(timezone.utc).isoformat()})
+    return {"status": "ok"}
+
+
+@app.get("/records")
+async def get_records():
+    """날짜별로 집계된 기록 목록을 반환한다."""
+    if not RECORDS_PATH.exists():
+        return []
+    try:
+        raw = json.loads(RECORDS_PATH.read_text(encoding="utf-8"))
+        return _aggregate_by_day(raw)
+    except (json.JSONDecodeError, OSError):
+        return []
+
+
+@app.get("/weekly-summary")
+async def weekly_summary():
+    """최근 7일치 집계 데이터를 LLM에 전달하여 종합 건강 코멘트를 반환한다."""
     records: list = []
     if RECORDS_PATH.exists():
         try:
             records = json.loads(RECORDS_PATH.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             pass
-
-    records.append({**data, "saved_at": datetime.now(timezone.utc).isoformat()})
-    RECORDS_PATH.write_text(
-        json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-    return {"status": "ok"}
-
-
-@app.get("/records")
-async def get_records():
-    """저장된 기록 목록을 반환한다."""
-    if not RECORDS_PATH.exists():
-        return []
-    try:
-        return json.loads(RECORDS_PATH.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return []
+    aggregated = _aggregate_by_day(records)
+    recent = aggregated[-7:] if len(aggregated) > 7 else aggregated
+    summary = get_weekly_summary(recent)
+    return {"summary": summary}

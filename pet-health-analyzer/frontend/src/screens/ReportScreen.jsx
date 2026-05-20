@@ -80,14 +80,14 @@ function deepCopy(cats) {
 function loadFromStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { categories: deepCopy(INITIAL_CATEGORIES), expired: false };
+    if (!raw) return { expired: false };
     const { timestamp, data } = JSON.parse(raw);
     if (Date.now() - new Date(timestamp).getTime() > EXPIRY_MS) {
-      return { categories: deepCopy(INITIAL_CATEGORIES), expired: true, expiredData: data };
+      return { expired: true, expiredData: data };
     }
-    return { categories: data, expired: false };
+    return { expired: false };
   } catch {
-    return { categories: deepCopy(INITIAL_CATEGORIES), expired: false };
+    return { expired: false };
   }
 }
 
@@ -118,7 +118,7 @@ function loadProfile() {
   return {};
 }
 
-export default function ReportScreen({ onEdit }) {
+export default function ReportScreen({ onEdit, onWeekly }) {
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -213,7 +213,10 @@ export default function ReportScreen({ onEdit }) {
             <span className="name-highlight">{profile.name || '반려동물'}</span>의{'\n'}건강 리포트
           </h1>
         </div>
-        <button className="icon-btn" onClick={onEdit} title="정보 수정">⚙️</button>
+        <div className="header-actions">
+          <button className="btn-weekly" onClick={onWeekly}>주간 리포트</button>
+          <button className="icon-btn" onClick={onEdit} title="정보 수정">⚙️</button>
+        </div>
       </div>
 
       {/* 사진 업로드 */}
@@ -393,7 +396,6 @@ export default function ReportScreen({ onEdit }) {
           </div>
         </div>
       )}
-
     </div>
   );
 }

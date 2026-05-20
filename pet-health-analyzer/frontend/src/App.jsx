@@ -2,12 +2,14 @@ import { useState } from 'react';
 import OnboardingScreen from './screens/OnboardingScreen';
 import EditProfileScreen from './screens/EditProfileScreen';
 import ReportScreen from './screens/ReportScreen';
+import WeeklyReportScreen from './screens/WeeklyReportScreen';
 import './styles/global.css';
 
 const SCREENS = {
   ONBOARDING: 'onboarding',
   REPORT: 'report',
   EDIT: 'edit',
+  WEEKLY: 'weekly',
 };
 
 function getInitialScreen() {
@@ -32,13 +34,19 @@ export default function App() {
         <OnboardingScreen onComplete={() => setScreen(SCREENS.REPORT)} />
       )}
       {screen === SCREENS.REPORT && (
-        <ReportScreen onEdit={() => setScreen(SCREENS.EDIT)} />
+        <ReportScreen
+          onEdit={() => setScreen(SCREENS.EDIT)}
+          onWeekly={() => setScreen(SCREENS.WEEKLY)}
+        />
       )}
       {screen === SCREENS.EDIT && (
         <EditProfileScreen
           onBack={() => setScreen(SCREENS.REPORT)}
           onReset={() => setScreen(SCREENS.ONBOARDING)}
         />
+      )}
+      {screen === SCREENS.WEEKLY && (
+        <WeeklyReportScreen onBack={() => setScreen(SCREENS.REPORT)} />
       )}
     </div>
   );

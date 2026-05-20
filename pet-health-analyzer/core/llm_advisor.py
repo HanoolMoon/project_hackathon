@@ -157,3 +157,48 @@ def get_advice(
             )
 
     return "[오류] 알 수 없는 오류로 조언을 가져오지 못했습니다."
+
+
+def get_weekly_summary(records: list[dict]) -> str:
+    """7일치 records를 바탕으로 종합 건강 코멘트를 생성한다."""
+    if not records:
+        return "데이터가 없어 코멘트를 생성할 수 없습니다."
+
+    lines = []
+    for r in records:
+        date = r.get("saved_at", "")[:10]
+        cv_class = r.get("result", {}).get("cv_class", "unknown")
+        cats = r.get("categories", {})
+        walk = cats.get("activity", {}).get("walkMinutes", "-")
+        energy = cats.get("condition", {}).get("energy", "-")
+        appetite = cats.get("condition", {}).get("appetite", "-")
+        vomiting = cats.get("condition", {}).get("vomiting", "-")
+        lines.append(
+            f"{date}: 변상태={cv_class}, 산책={walk}분, 기력={energy}, 식욕={appetite}, 구토={vomiting}"
+        )
+
+    data_text = "\n".join(lines)
+    system_prompt = (
+        "너는 반려동물 건강 전문가야. "
+        "일주일치 건강 데이터를 보고 전반적인 건강 추이와 "
+        "개선 방향을 2~3문장으로 친근하게 설명해줘."
+    )
+    user_message = (
+        f"아래는 반려동물의 최근 7일치 건강 데이터야:\n\n{data_text}\n\n"
+        "전반적인 건강 상태와 개선 방향을 친근한 말투로 2~3문장으로 설명해줘."
+    )
+
+    client = _get_client()
+    try:
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+            max_tokens=200,
+            temperature=0.7,
+        )
+        return response.choices[0].message.content.strip()
+    except Exception:
+        return "AI 코멘트를 불러올 수 없습니다. 잠시 후 다시 시도해주세요."
