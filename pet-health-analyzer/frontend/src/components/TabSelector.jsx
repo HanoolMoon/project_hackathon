@@ -1,4 +1,8 @@
 export default function TabSelector({ label, options, value, onChange }) {
+  const handleClick = (optValue) => {
+    onChange(value === optValue ? '' : optValue);
+  };
+
   return (
     <div className="input-group">
       <label className="input-label">{label}</label>
@@ -7,7 +11,7 @@ export default function TabSelector({ label, options, value, onChange }) {
           <button
             key={opt.value}
             className={`tab-btn${value === opt.value ? ' active' : ''}`}
-            onClick={() => onChange(opt.value)}
+            onClick={() => handleClick(opt.value)}
             type="button"
           >
             {opt.label}

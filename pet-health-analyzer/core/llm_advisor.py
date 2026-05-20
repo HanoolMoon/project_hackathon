@@ -1,7 +1,7 @@
 """
 GPT API 호출 모듈.
 system_prompt.txt와 user_template.txt를 읽어 프롬프트를 구성하고,
-반려동물 프로필 및 CV 분석 결과를 바탕으로 맞춤 건강 조언을 생성한다.
+반려동물 프로필, CV 분석 결과, 추가 카테고리 정보를 바탕으로 건강 조언을 생성한다.
 """
 
 import os
@@ -23,7 +23,6 @@ load_dotenv(Path(__file__).resolve().parent.parent / "config" / ".env")
 
 
 def _get_client() -> OpenAI:
-    """OpenAI 클라이언트를 생성한다. API 키가 없으면 오류를 발생시킨다."""
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise EnvironmentError(
@@ -34,17 +33,75 @@ def _get_client() -> OpenAI:
 
 
 def _read_prompt_file(path: str) -> str:
-    """프롬프트 텍스트 파일을 읽어 반환한다."""
     p = Path(path)
     if not p.exists():
-        raise FileNotFoundError(
-            f"[오류] 프롬프트 파일을 찾을 수 없습니다: {path}"
-        )
+        raise FileNotFoundError(f"[오류] 프롬프트 파일을 찾을 수 없습니다: {path}")
     return p.read_text(encoding="utf-8").strip()
 
 
-def get_advice(cv_result: dict[str, Any], pet_profile: dict[str, Any]) -> str:
-    """CV 결과와 프로필을 바탕으로 GPT 건강 조언을 반환한다.
+def _build_extra_info(categories: dict) -> str:
+    """카테고리 데이터에서 입력된 항목만 골라 추가 정보 문자열을 만든다."""
+    parts = []
+
+    meal = categories.get("meal", {})
+    meal_lines = []
+    if meal.get("food"):
+        meal_lines.append(f"  먹은 음식: {meal['food']}")
+    if meal.get("amount"):
+        meal_lines.append(f"  식사량: {meal['amount']}")
+    if meal.get("snack"):
+        meal_lines.append(f"  간식: {meal['snack']}")
+    if meal.get("water"):
+        meal_lines.append(f"  물 섭취량: {meal['water']}")
+    if meal_lines:
+        parts.append("[식사]\n" + "\n".join(meal_lines))
+
+    activity = categories.get("activity", {})
+    act_lines = []
+    if activity.get("walkMinutes"):
+        act_lines.append(f"  산책: {activity['walkMinutes']}분")
+    if activity.get("exercise"):
+        act_lines.append(f"  운동량: {activity['exercise']}")
+    if activity.get("location"):
+        act_lines.append(f"  활동 장소: {activity['location']}")
+    if act_lines:
+        parts.append("[활동]\n" + "\n".join(act_lines))
+
+    condition = categories.get("condition", {})
+    cond_lines = []
+    if condition.get("energy"):
+        cond_lines.append(f"  기력: {condition['energy']}")
+    if condition.get("appetite"):
+        cond_lines.append(f"  식욕: {condition['appetite']}")
+    if condition.get("vomiting"):
+        cond_lines.append(f"  구토: {condition['vomiting']}")
+    if condition.get("weight"):
+        cond_lines.append(f"  체중: {condition['weight']}kg")
+    if cond_lines:
+        parts.append("[컨디션]\n" + "\n".join(cond_lines))
+
+    environment = categories.get("environment", {})
+    env_lines = []
+    if environment.get("weather"):
+        env_lines.append(f"  날씨: {environment['weather']}")
+    if environment.get("temperature"):
+        env_lines.append(f"  온도: {environment['temperature']}°C")
+    if environment.get("stress"):
+        env_lines.append(f"  스트레스 요인: {environment['stress']}")
+    if env_lines:
+        parts.append("[환경]\n" + "\n".join(env_lines))
+
+    if not parts:
+        return ""
+    return "\n추가 정보:\n" + "\n\n".join(parts) + "\n"
+
+
+def get_advice(
+    cv_result: dict[str, Any],
+    pet_profile: dict[str, Any],
+    categories: dict[str, Any] | None = None,
+) -> str:
+    """CV 결과, 프로필, 카테고리 정보를 바탕으로 GPT 건강 조언을 반환한다.
     오류 발생 시 1회 재시도 후 한국어 에러 메시지를 반환한다.
     """
     if cv_result.get("class") == "unknown":
@@ -56,7 +113,9 @@ def get_advice(cv_result: dict[str, Any], pet_profile: dict[str, Any]) -> str:
     system_prompt = _read_prompt_file(SYSTEM_PROMPT_PATH)
     user_template = _read_prompt_file(USER_TEMPLATE_PATH)
 
+    extra_info = _build_extra_info(categories or {})
     confidence_pct = f"{cv_result['confidence'] * 100:.1f}"
+
     user_message = user_template.format(
         pet_name=pet_profile.get("name", "이름 미상"),
         species=pet_profile.get("species", "알 수 없음"),
@@ -65,6 +124,7 @@ def get_advice(cv_result: dict[str, Any], pet_profile: dict[str, Any]) -> str:
         cv_class=cv_result.get("class", "unknown"),
         bristol_grade=cv_result.get("bristol_grade", "?"),
         confidence=confidence_pct,
+        extra_info=extra_info,
     )
 
     client = _get_client()

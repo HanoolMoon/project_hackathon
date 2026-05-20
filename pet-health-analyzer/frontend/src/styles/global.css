@@ -456,3 +456,99 @@ body {
   font-size: 14px;
   color: var(--text-secondary);
 }
+
+/* ── 사진 미리보기 래퍼 ── */
+.photo-preview-wrap {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.photo-preview-wrap .preview-img {
+  margin-bottom: 0;
+}
+
+.btn-retake {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.btn-retake:active {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+/* ── 컴팩트 드롭존 ── */
+.drop-zone--compact {
+  padding: 24px 20px;
+  margin-bottom: 16px;
+}
+
+.drop-zone--compact .drop-zone-icon {
+  font-size: 36px;
+  margin-bottom: 8px;
+}
+
+.drop-zone--compact .drop-zone-title {
+  font-size: 15px;
+}
+
+.drop-zone--compact .drop-zone-desc {
+  font-size: 12px;
+}
+
+/* ── 카테고리 섹션 ── */
+.category-block {
+  margin-bottom: 16px;
+}
+
+.category-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.category-form {
+  background: var(--card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── 분석 버튼 ── */
+.btn-analyze {
+  margin-top: 8px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+}
+
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── 버튼 내 스피너 ── */
+.btn-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
