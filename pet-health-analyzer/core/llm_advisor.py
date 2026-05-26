@@ -6,6 +6,7 @@ system_prompt.txt와 user_template.txt를 읽어 프롬프트를 구성하고,
 
 import os
 import time
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -157,6 +158,62 @@ def get_advice(
             )
 
     return "[오류] 알 수 없는 오류로 조언을 가져오지 못했습니다."
+
+
+def get_advice_stream(
+    cv_result: dict[str, Any],
+    pet_profile: dict[str, Any],
+    categories: dict[str, Any] | None = None,
+) -> Iterator[str]:
+    """CV 결과, 프로필, 카테고리 정보를 바탕으로 GPT 건강 조언을 청크 단위로 yield한다."""
+    if cv_result.get("class") == "unknown":
+        yield (
+            "대변 분류 신뢰도가 낮아 AI 조언을 제공할 수 없습니다.\n"
+            "더 선명한 사진으로 다시 시도하거나 가까운 동물병원에 문의해주세요."
+        )
+        return
+
+    system_prompt = _read_prompt_file(SYSTEM_PROMPT_PATH)
+    user_template = _read_prompt_file(USER_TEMPLATE_PATH)
+
+    extra_info = _build_extra_info(categories or {})
+    confidence_pct = f"{cv_result['confidence'] * 100:.1f}"
+
+    user_message = user_template.format(
+        pet_name=pet_profile.get("name", "이름 미상"),
+        species=pet_profile.get("species", "알 수 없음"),
+        age=pet_profile.get("age", "?"),
+        weight=pet_profile.get("weight", "?"),
+        cv_class=cv_result.get("class", "unknown"),
+        bristol_grade=cv_result.get("bristol_grade", "?"),
+        confidence=confidence_pct,
+        extra_info=extra_info,
+    )
+
+    client = _get_client()
+
+    try:
+        stream = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+            max_tokens=MAX_TOKENS,
+            temperature=0.7,
+            stream=True,
+        )
+        for chunk in stream:
+            delta = chunk.choices[0].delta.content
+            if delta:
+                yield delta
+    except AuthenticationError:
+        yield (
+            "[오류] OpenAI API 키가 유효하지 않습니다.\n"
+            "config/.env 파일의 OPENAI_API_KEY를 확인해주세요."
+        )
+    except APIError as e:
+        yield f"[오류] GPT API 호출에 실패했습니다: {e}\n잠시 후 다시 시도해주세요."
 
 
 def get_weekly_summary(records: list[dict]) -> str:

@@ -15,10 +15,11 @@ load_dotenv(Path(__file__).resolve().parent / "config" / ".env")
 
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
 from config.settings import BASE_DIR, PET_CONFIG_PATH
 from core.cv_analyzer import analyze
-from core.llm_advisor import get_advice, get_weekly_summary
+from core.llm_advisor import get_advice, get_advice_stream, get_weekly_summary
 
 RECORDS_PATH = BASE_DIR / "records.json"
 
@@ -194,6 +195,76 @@ async def analyze_image(
         return response_data
     finally:
         Path(tmp_path).unlink(missing_ok=True)
+
+
+@app.post("/analyze-stream")
+async def analyze_image_stream(
+    file: UploadFile = File(...),
+    profile: str = Form(default=""),
+    categories: str = Form(default=""),
+):
+    """이미지를 CV 분석한 뒤 GPT 조언을 SSE 스트림으로 반환한다.
+
+    이벤트 형식:
+      data: {"type": "meta", "cv_class": ..., "bristol_grade": ..., "confidence": ..., "description": ...}
+      data: {"type": "chunk", "text": "..."}
+      data: {"type": "done"}
+    """
+    YOLO_SUPPORTED = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp", ".avif", ".heic"}
+    ALIAS = {".jfif": ".jpg", ".jpe": ".jpg"}
+    suffix = Path(file.filename or "image.jpg").suffix.lower()
+    suffix = ALIAS.get(suffix, suffix)
+    if suffix not in YOLO_SUPPORTED:
+        suffix = ".jpg"
+
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        content = await file.read()
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        cv_result = analyze(tmp_path)
+    finally:
+        Path(tmp_path).unlink(missing_ok=True)
+
+    pet_profile = _resolve_profile(profile)
+
+    categories_data: dict = {}
+    if categories:
+        try:
+            categories_data = json.loads(categories)
+        except json.JSONDecodeError:
+            pass
+
+    def event_stream():
+        meta = {
+            "type": "meta",
+            "cv_class": cv_result["class"],
+            "bristol_grade": cv_result.get("bristol_grade", ""),
+            "confidence": cv_result["confidence"],
+            "description": cv_result.get("description", ""),
+        }
+        yield f"data: {json.dumps(meta, ensure_ascii=False)}\n\n"
+
+        chunks: list[str] = []
+        for chunk in get_advice_stream(cv_result, pet_profile, categories_data):
+            chunks.append(chunk)
+            payload = json.dumps({"type": "chunk", "text": chunk}, ensure_ascii=False)
+            yield f"data: {payload}\n\n"
+
+        advice = "".join(chunks)
+        _append_record({
+            "saved_at": datetime.now(timezone.utc).isoformat(),
+            "categories": categories_data,
+            "result": {
+                "cv_class": cv_result["class"],
+                "advice": advice,
+            },
+        })
+
+        yield f"data: {json.dumps({'type': 'done'}, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
 @app.post("/record")
